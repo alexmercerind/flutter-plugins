@@ -36,7 +36,7 @@ class SensorStreamHandler() : EventChannel.StreamHandler {
             sensorEventListener = sensorEventListener(events!!);
             sensorManager!!.registerListener(
                 sensorEventListener,
-                sensor, SensorManager.SENSOR_DELAY_GAME
+                sensor, SensorManager.SENSOR_DELAY_FASTEST
             );
         }
     }

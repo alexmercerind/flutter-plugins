@@ -20,7 +20,10 @@ class PedometerPlugin : FlutterPlugin {
 
     @TargetApi(Build.VERSION_CODES.KITKAT)
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        MethodChannel(flutterPluginBinding.getBinaryMessenger(), CHANNEL).setMethodCallHandler { call, result ->
+        MethodChannel(
+            flutterPluginBinding.getBinaryMessenger(),
+            CHANNEL
+        ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startPlatform" -> {
                     val ctx: Context = flutterPluginBinding.applicationContext
@@ -55,6 +58,16 @@ class PedometerPlugin : FlutterPlugin {
                 "hasPlatformStarted" -> {
                     result.success(DataHolder.started)
                 }
+                "hasStepCounter" -> {
+                    try {
+                        val sensorManager: SensorManager? =
+                            flutterPluginBinding.applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+                        val sensor: Sensor? = sensorManager!!.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+                        result.success(sensor != null)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }
@@ -65,7 +78,8 @@ class PedometerPlugin : FlutterPlugin {
         altStepCountChannel = EventChannel(flutterPluginBinding.binaryMessenger, "alt_step_count")
 
         /// Create handlers
-        val stepDetectionHandler = SensorStreamHandler(flutterPluginBinding, Sensor.TYPE_STEP_DETECTOR)
+        val stepDetectionHandler =
+            SensorStreamHandler(flutterPluginBinding, Sensor.TYPE_STEP_DETECTOR)
         val stepCountHandler = SensorStreamHandler(flutterPluginBinding, Sensor.TYPE_STEP_COUNTER)
         val altStepCountHandler = AltStreamHandler(flutterPluginBinding)
 

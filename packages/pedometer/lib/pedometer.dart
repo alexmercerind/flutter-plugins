@@ -32,8 +32,8 @@ class Pedometer {
   static Stream<PedestrianStatus> _androidStream(
       Stream<PedestrianStatus> stream) {
     /// Init a timer and a status
-    Timer t;
-    int pedestrianStatus;
+    Timer? t;
+    int? pedestrianStatus;
 
     /// Listen for events on the original stream
     /// Transform these events by using the timer
@@ -42,7 +42,7 @@ class Pedometer {
       /// If the timer has been started, it should be cancelled
       /// to prevent sending out additional 'walking' events
       if (t != null) {
-        t.cancel();
+        t!.cancel();
 
         /// If a previous status was either not set yet, or was 'stopped'
         /// then a 'walking' event should be emitted.
@@ -66,11 +66,13 @@ class Pedometer {
 
   /// returns true if the (android) device has a step counter
   static Future<bool> get hasStepCounter async {
-    var hasPedometer = true;
-    await _stepCountChannel.receiveBroadcastStream().last.catchError(
-        (Object err) =>
-            hasPedometer = !err.toString().contains("not available"));
-    return hasPedometer;
+    try {
+      return await platform.invokeMethod('hasStepCounter') ?? false;
+    } catch (exception, stacktrace) {
+      print(exception.toString());
+      print(stacktrace.toString());
+    }
+    return false;
   }
 
   /// Returns the steps taken since last system boot.
@@ -81,43 +83,45 @@ class Pedometer {
 
   /// events will only arrive if the service has started, so remember to call
   /// `startPlatform`
-  static Stream<StepCount> get altStepCountStream =>
-    _altStepCountChannel
-        .receiveBroadcastStream()
-        .map((event) => StepCount._(event));
+  static Stream<StepCount> get altStepCountStream => _altStepCountChannel
+      .receiveBroadcastStream()
+      .map((event) => StepCount._(event));
 
   /// returns true if android service has started
-  static Future<bool> hasPlatformStarted() {
+  static Future<bool> hasPlatformStarted() async {
     try {
-      return platform.invokeMethod('hasPlatformStarted');
-    } on PlatformException catch (e) {
-      print("Couldn't check platform code. ${e.message}");
+      return await platform.invokeMethod('hasPlatformStarted') ?? false;
+    } catch (exception, stacktrace) {
+      print(exception.toString());
+      print(stacktrace.toString());
     }
-    return null;
+    return false;
   }
 
   /// start the step tracking service on android
-  static void startPlatform() {
+  static Future<void> startPlatform() async {
     try {
-      platform.invokeMethod('startPlatform');
-    } on PlatformException catch (e) {
-      print("Couldn't start platform code. ${e.message}");
+      await platform.invokeMethod('startPlatform');
+    } catch (exception, stacktrace) {
+      print(exception.toString());
+      print(stacktrace.toString());
     }
   }
 
   /// stop the step tracking service on android
-  static void stopPlatform() {
+  static Future<void> stopPlatform() async {
     try {
-      platform.invokeMethod('stopPlatform');
-    } on PlatformException catch (e) {
-      print("Couldn't stop platform code. ${e.message}");
+      await platform.invokeMethod('stopPlatform');
+    } catch (exception, stacktrace) {
+      print(exception.toString());
+      print(stacktrace.toString());
     }
   }
 }
 
 /// A DTO for steps taken containing the number of steps taken.
 class StepCount {
-  DateTime _timeStamp;
+  late DateTime _timeStamp;
   int _steps = 0;
 
   StepCount._(dynamic e) {
@@ -146,12 +150,12 @@ class PedestrianStatus {
     _walking: _WALKING
   };
 
-  DateTime _timeStamp;
+  late DateTime _timeStamp;
   String _status = _UNKNOWN;
 
   PedestrianStatus._(dynamic t) {
     int _type = t as int;
-    _status = _STATUSES[_type];
+    _status = _STATUSES[_type]!;
     _timeStamp = DateTime.now();
   }
 
